@@ -73,32 +73,68 @@ function App() {
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    const diff = Math.floor((Date.now() - date.getTime()) / 60000);
-
-    if (diff < 1) return "Just now";
-    if (diff < 60) return `${diff} min ago`;
-
     const today = new Date();
+
     if (date.toDateString() === today.toDateString()) {
-      return `Today ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === yesterday.toDateString()) {
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     }
 
     return date.toLocaleDateString();
   };
 
+  // =========================
+  // 📅 GROUP BY DATE LOGIC
+  // =========================
+  const groupRecords = () => {
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+    const groups = {
+      Today: [],
+      Yesterday: [],
+      Older: [],
+    };
+
+    records.forEach((r) => {
+      const d = new Date(r.time).toDateString();
+      if (d === today) groups.Today.push(r);
+      else if (d === yesterday) groups.Yesterday.push(r);
+      else groups.Older.push(r);
+    });
+
+    return groups;
+  };
+
+  const grouped = groupRecords();
+
   // =====================
-  // 📊 CHART LOGIC
+  // 📊 CHART LOGIC (unchanged)
   // =====================
   const getChartData = () => {
-    const days = [...Array(7)].map((_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      return d.toDateString();
-    }).reverse();
+    const days = [...Array(7)]
+      .map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toDateString();
+      })
+      .reverse();
 
-    const totals = days.map(day => {
+    const totals = days.map((day) => {
       return records
-        .filter(r => new Date(r.time).toDateString() === day)
+        .filter((r) => new Date(r.time).toDateString() === day)
         .reduce((sum, r) => sum + Number(r.amount), 0);
     });
 
@@ -111,11 +147,6 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="max-w-md mx-auto space-y-5">
-
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Alessia Food Supply</h1>
-        </div>
 
         {/* Total */}
         <div className="bg-white rounded-2xl shadow p-5 text-center">
@@ -134,11 +165,13 @@ function App() {
                   className="w-full bg-blue-500 rounded-t-md"
                   style={{
                     height: `${(value / max) * 100}%`,
-                    minHeight: value > 0 ? "6px" : "0px"
+                    minHeight: value > 0 ? "6px" : "0px",
                   }}
                 />
                 <span className="text-[10px] text-gray-400 mt-1">
-                  {new Date(days[i]).toLocaleDateString(undefined, { weekday: "short" })}
+                  {new Date(days[i]).toLocaleDateString(undefined, {
+                    weekday: "short",
+                  })}
                 </span>
               </div>
             ))}
@@ -168,34 +201,53 @@ function App() {
           </button>
         </div>
 
-        {/* History */}
-        <div className="space-y-3">
+        {/* History (GROUPED) */}
+        <div className="space-y-4">
           <h2 className="font-semibold text-gray-700">History</h2>
 
-          {loading && <p className="text-gray-400 text-center">Loading records...</p>}
-
-          {!loading && records.length === 0 && (
-            <p className="text-gray-400 text-center">No records yet. Add your first one.</p>
+          {loading && (
+            <p className="text-gray-400 text-center">Loading records...</p>
           )}
 
-          {!loading && records.map((r) => (
-            <div
-              key={r._id}
-              className="bg-white rounded-2xl shadow p-4 flex justify-between items-center"
-            >
-              <div className="flex gap-2 items-center">
-                <p className="font-bold text-xl text-blue-500">{r.amount} ml</p>
-                <p className="text-xs text-gray-400">{formatTime(r.time)}</p>
-              </div>
+          {!loading && records.length === 0 && (
+            <p className="text-gray-400 text-center">
+              No records yet. Add your first one.
+            </p>
+          )}
 
-              <button
-                onClick={() => setConfirmId(r._id)}
-                className="text-red-500 hover:text-red-700 text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          ))}
+          {!loading &&
+            Object.entries(grouped).map(([title, list]) =>
+              list.length > 0 ? (
+                <div key={title} className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-500">
+                    {title}
+                  </h3>
+
+                  {list.map((r) => (
+                    <div
+                      key={r._id}
+                      className="bg-white rounded-2xl shadow p-4 flex justify-between items-center"
+                    >
+                      <div className="flex gap-2 items-center">
+                        <p className="font-bold text-xl text-blue-500">
+                          {r.amount} ml
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {formatTime(r.time)}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => setConfirmId(r._id)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null
+            )}
         </div>
       </div>
 
