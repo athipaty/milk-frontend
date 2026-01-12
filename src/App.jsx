@@ -12,7 +12,6 @@ function App() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [confirmId, setConfirmId] = useState(null);
 
   const loadMilk = async () => {
@@ -69,7 +68,6 @@ function App() {
       await loadTotal();
       setLoading(false);
     };
-
     init();
   }, []);
 
@@ -85,8 +83,30 @@ function App() {
       return `Today ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     }
 
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleDateString();
   };
+
+  // =====================
+  // 📊 CHART LOGIC
+  // =====================
+  const getChartData = () => {
+    const days = [...Array(7)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toDateString();
+    }).reverse();
+
+    const totals = days.map(day => {
+      return records
+        .filter(r => new Date(r.time).toDateString() === day)
+        .reduce((sum, r) => sum + Number(r.amount), 0);
+    });
+
+    return { days, totals };
+  };
+
+  const { days, totals } = getChartData();
+  const max = Math.max(...totals, 1);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
@@ -94,13 +114,35 @@ function App() {
 
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Milk Tracker</h1>
+          <h1 className="text-3xl font-bold">Alessia Food Supply</h1>
         </div>
 
         {/* Total */}
         <div className="bg-white rounded-2xl shadow p-5 text-center">
           <p className="text-gray-400 text-sm">Today's Total</p>
           <p className="text-4xl font-bold text-blue-600">{total} ml</p>
+        </div>
+
+        {/* Chart */}
+        <div className="bg-white rounded-2xl shadow p-5">
+          <h2 className="font-semibold text-gray-700 mb-3">Last 7 Days</h2>
+
+          <div className="flex items-end gap-2 h-32">
+            {totals.map((value, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center">
+                <div
+                  className="w-full bg-blue-500 rounded-t-md"
+                  style={{
+                    height: `${(value / max) * 100}%`,
+                    minHeight: value > 0 ? "6px" : "0px"
+                  }}
+                />
+                <span className="text-[10px] text-gray-400 mt-1">
+                  {new Date(days[i]).toLocaleDateString(undefined, { weekday: "short" })}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Add record */}
@@ -130,48 +172,38 @@ function App() {
         <div className="space-y-3">
           <h2 className="font-semibold text-gray-700">History</h2>
 
-          {loading && (
-            <p className="text-gray-400 text-center">Loading records...</p>
-          )}
+          {loading && <p className="text-gray-400 text-center">Loading records...</p>}
 
           {!loading && records.length === 0 && (
             <p className="text-gray-400 text-center">No records yet. Add your first one.</p>
           )}
 
-          {!loading &&
-            records.map((r) => (
-              <div
-                key={r._id}
-                className="bg-white rounded-2xl shadow p-4 flex justify-between items-center"
-              >
-                <div className="flex gap-2 items-center">
-                  <p className="font-bold text-xl text-blue-500">
-                    {r.amount} ml
-                  </p>
-
-                  <p className="text-xs text-gray-400">
-                    {formatTime(r.time)}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setConfirmId(r._id)}
-                  className="text-red-500 hover:text-red-700 text-sm"
-                >
-                  Delete
-                </button>
+          {!loading && records.map((r) => (
+            <div
+              key={r._id}
+              className="bg-white rounded-2xl shadow p-4 flex justify-between items-center"
+            >
+              <div className="flex gap-2 items-center">
+                <p className="font-bold text-xl text-blue-500">{r.amount} ml</p>
+                <p className="text-xs text-gray-400">{formatTime(r.time)}</p>
               </div>
-            ))}
+
+              <button
+                onClick={() => setConfirmId(r._id)}
+                className="text-red-500 hover:text-red-700 text-sm"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Custom delete modal */}
+      {/* Delete modal */}
       {confirmId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
           <div className="bg-white p-6 rounded-2xl space-y-4 w-72">
-            <p className="text-center font-medium">
-              Delete this record?
-            </p>
+            <p className="text-center font-medium">Delete this record?</p>
 
             <div className="flex gap-2">
               <button
