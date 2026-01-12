@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-// Create axios instance (clean & reusable)
 const api = axios.create({
   baseURL: "https://milk-backend-05vv.onrender.com/api/milk",
 });
@@ -11,7 +10,11 @@ function App() {
   const [amount, setAmount] = useState("");
   const [total, setTotal] = useState(0);
 
-  // Load all records
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [confirmId, setConfirmId] = useState(null);
+
   const loadMilk = async () => {
     try {
       const { data } = await api.get("/");
@@ -21,7 +24,6 @@ function App() {
     }
   };
 
-  // Load today total
   const loadTotal = async () => {
     try {
       const { data } = await api.get("/summary/today");
@@ -32,30 +34,29 @@ function App() {
   };
 
   const addMilk = async () => {
-    console.log("Add button clicked", amount);
-
     if (!amount || amount <= 0) {
       return alert("Please enter valid amount");
     }
 
     try {
+      setSaving(true);
       await api.post("/", { amount, type: "breast" });
       setAmount("");
-      loadMilk();
-      loadTotal();
+      await loadMilk();
+      await loadTotal();
     } catch (err) {
       console.error("Failed to add record", err);
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Delete record
-  const deleteMilk = async (id) => {
-    if (!window.confirm("Delete this record?")) return;
-
+  const deleteMilk = async () => {
     try {
-      await api.delete(`/${id}`);
-      loadMilk();
-      loadTotal();
+      await api.delete(`/${confirmId}`);
+      setConfirmId(null);
+      await loadMilk();
+      await loadTotal();
     } catch (err) {
       console.error("Failed to delete", err);
     }
@@ -63,16 +64,34 @@ function App() {
 
   useEffect(() => {
     const init = async () => {
+      setLoading(true);
       await loadMilk();
       await loadTotal();
+      setLoading(false);
     };
 
     init();
   }, []);
 
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const diff = Math.floor((Date.now() - date.getTime()) / 60000);
+
+    if (diff < 1) return "Just now";
+    if (diff < 60) return `${diff} min ago`;
+
+    const today = new Date();
+    if (date.toDateString() === today.toDateString()) {
+      return `Today ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    }
+
+    return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="max-w-md mx-auto space-y-5">
+
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-bold">Milk Tracker</h1>
@@ -86,7 +105,6 @@ function App() {
 
         {/* Add record */}
         <div className="bg-white rounded-2xl shadow p-5 space-y-4">
-
           <input
             type="number"
             placeholder="Amount (ml)"
@@ -97,9 +115,14 @@ function App() {
 
           <button
             onClick={addMilk}
-            className="w-full bg-blue-600 text-white py-2 rounded-xl font-medium hover:bg-blue-700 active:scale-95 transition"
+            disabled={saving}
+            className={`w-full py-2 rounded-xl font-medium transition ${
+              saving
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+            }`}
           >
-            Add Record
+            {saving ? "Saving..." : "Add Record"}
           </button>
         </div>
 
@@ -107,31 +130,67 @@ function App() {
         <div className="space-y-3">
           <h2 className="font-semibold text-gray-700">History</h2>
 
-          {records.map((r) => (
-            <div
-              key={r._id}
-              className="bg-white rounded-2xl shadow p-4 flex justify-between items-center"
-            >
-              <div className="flex gap-2 items-center">
-                <p className="font-bold text-xl text-blue-500">
-                  {r.amount} ml
-                </p>
+          {loading && (
+            <p className="text-gray-400 text-center">Loading records...</p>
+          )}
 
-                <p className="text-xs text-gray-400 mt-1">
-                  {new Date(r.time).toLocaleString()}
-                </p>
+          {!loading && records.length === 0 && (
+            <p className="text-gray-400 text-center">No records yet. Add your first one.</p>
+          )}
+
+          {!loading &&
+            records.map((r) => (
+              <div
+                key={r._id}
+                className="bg-white rounded-2xl shadow p-4 flex justify-between items-center"
+              >
+                <div className="flex gap-2 items-center">
+                  <p className="font-bold text-xl text-blue-500">
+                    {r.amount} ml
+                  </p>
+
+                  <p className="text-xs text-gray-400">
+                    {formatTime(r.time)}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setConfirmId(r._id)}
+                  className="text-red-500 hover:text-red-700 text-sm"
+                >
+                  Delete
+                </button>
               </div>
+            ))}
+        </div>
+      </div>
+
+      {/* Custom delete modal */}
+      {confirmId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-2xl space-y-4 w-72">
+            <p className="text-center font-medium">
+              Delete this record?
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmId(null)}
+                className="flex-1 border rounded-xl py-2"
+              >
+                Cancel
+              </button>
 
               <button
-                onClick={() => deleteMilk(r._id)}
-                className="text-red-500 hover:text-red-700 text-sm"
+                onClick={deleteMilk}
+                className="flex-1 bg-red-600 text-white rounded-xl py-2"
               >
                 Delete
               </button>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
