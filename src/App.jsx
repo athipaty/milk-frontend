@@ -248,8 +248,7 @@ function App() {
               return (
                 <div
                   key={i}
-                  className="flex-1 flex flex-col items-center justify-end relative h-full"
-
+                  className="flex-1 flex flex-col items-center justify-end relative"
                 >
                   <div
                     className="w-full bg-blue-500 rounded-t-lg transition-all duration-500 relative"
@@ -279,19 +278,25 @@ function App() {
         {/* Sticky Add record bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
           <div className="max-w-md mx-auto space-y-3">
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="text-center w-full border rounded-xl px-4 py-2"
-            />
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500">Start time</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="text-center w-full border rounded-xl px-4 py-2"
+              />
+            </div>
 
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="text-center w-full border rounded-xl px-4 py-2"
-            />
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500">End time</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="text-center w-full border rounded-xl px-4 py-2"
+              />
+            </div>
 
             <input
               type="number"
