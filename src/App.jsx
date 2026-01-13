@@ -215,19 +215,7 @@ function App() {
   };
 
   const chartData = buildChart();
-  const rawMax = Math.max(...chartData.map((d) => d.total), 0);
-
-  // scale nicely to nearest 50 or 100
-  const roundedMax =
-    rawMax <= 100
-      ? 100
-      : rawMax <= 200
-      ? 200
-      : rawMax <= 500
-      ? 500
-      : Math.ceil(rawMax / 500) * 500;
-
-  const maxValue = roundedMax;
+  const maxValue = Math.max(...chartData.map((d) => d.total), 1);
 
   const getDurationMinutes = (start, end) => {
     const startTime = new Date(start);
@@ -260,7 +248,8 @@ function App() {
               return (
                 <div
                   key={i}
-                  className="flex-1 flex flex-col items-center justify-end relative"
+                  className="flex-1 flex flex-col items-center justify-end relative h-full"
+
                 >
                   <div
                     className="w-full bg-blue-500 rounded-t-lg transition-all duration-500 relative"
