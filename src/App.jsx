@@ -14,6 +14,14 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
 
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
+  const [editing, setEditing] = useState(null); // holds the record being edited
+  const [editAmount, setEditAmount] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+
   const loadMilk = async () => {
     try {
       const { data } = await api.get("/");
@@ -33,14 +41,29 @@ function App() {
   };
 
   const addMilk = async () => {
-    if (!amount || amount <= 0) {
-      return alert("Please enter valid amount");
-    }
+    if (!amount || amount <= 0) return alert("Invalid amount");
+    if (!startTime || !endTime) return alert("Please select time");
+
+    const today = new Date().toISOString().split("T")[0];
+
+    const start = new Date(`${today}T${startTime}`);
+    const end = new Date(`${today}T${endTime}`);
+
+    if (end <= start) return alert("End time must be after start time");
 
     try {
       setSaving(true);
-      await api.post("/", { amount, type: "breast" });
+      await api.post("/", {
+        amount,
+        type: "breast",
+        startTime: start,
+        endTime: end,
+      });
+
       setAmount("");
+      setStartTime("");
+      setEndTime("");
+
       await loadMilk();
       await loadTotal();
     } catch (err) {
@@ -95,6 +118,51 @@ function App() {
     return date.toLocaleDateString();
   };
 
+  const openEdit = (record) => {
+    setEditing(record);
+
+    setEditAmount(record.amount);
+    setEditStart(
+      new Date(record.startTime).toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+    setEditEnd(
+      new Date(record.endTime).toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+  };
+
+  const saveEdit = async () => {
+    if (!editAmount || editAmount <= 0) return alert("Invalid amount");
+    if (!editStart || !editEnd) return alert("Select time");
+
+    const today = new Date().toISOString().split("T")[0];
+
+    const start = new Date(`${today}T${editStart}`);
+    const end = new Date(`${today}T${editEnd}`);
+
+    if (end <= start) return alert("End time must be after start time");
+
+    try {
+      await api.put(`/${editing._id}`, {
+        amount: editAmount,
+        startTime: start,
+        endTime: end,
+        time: start, // keep everything consistent
+      });
+
+      setEditing(null);
+      await loadMilk();
+      await loadTotal();
+    } catch (err) {
+      console.error("Failed to update record", err);
+    }
+  };
+
   // =========================
   // 📅 GROUP BY DATE LOGIC
   // =========================
@@ -141,13 +209,22 @@ function App() {
     return { days, totals };
   };
 
+  const getDurationMinutes = (start, end) => {
+    const startTime = new Date(start);
+    const endTime = new Date(end);
+
+    const diffMs = endTime - startTime;
+    const diffMinutes = Math.round(diffMs / 60000);
+
+    return diffMinutes;
+  };
+
   const { days, totals } = getChartData();
   const max = Math.max(...totals, 1);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="max-w-md mx-auto space-y-5">
-
         {/* Total */}
         <div className="bg-white rounded-2xl shadow p-5 text-center">
           <p className="text-gray-400 text-sm">Today's Total</p>
@@ -181,11 +258,25 @@ function App() {
         {/* Add record */}
         <div className="bg-white rounded-2xl shadow p-5 space-y-4">
           <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            className="text-center w-full border rounded-xl px-4 py-2"
+          />
+
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            className="text-center w-full border rounded-xl px-4 py-2"
+          />
+
+          <input
             type="number"
             placeholder="Amount (ml)"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="text-center w-full border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="text-center w-full border rounded-xl px-4 py-2"
           />
 
           <button
@@ -233,16 +324,34 @@ function App() {
                           {r.amount} ml
                         </p>
                         <p className="text-xs text-gray-400">
-                          {formatTime(r.time)}
+                          {new Date(r.startTime).toLocaleTimeString("en-GB", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {" - "}
+                          {new Date(r.endTime).toLocaleTimeString("en-GB", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}{" "}
+                          ({getDurationMinutes(r.startTime, r.endTime)} min)
                         </p>
                       </div>
 
-                      <button
-                        onClick={() => setConfirmId(r._id)}
-                        className="text-red-500 hover:text-red-700 text-sm"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => openEdit(r)}
+                          className="text-blue-500 hover:text-blue-700 text-sm"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() => setConfirmId(r._id)}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -250,6 +359,52 @@ function App() {
             )}
         </div>
       </div>
+
+      {/* Edit modal */}
+      {editing && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-2xl space-y-4 w-80">
+            <h2 className="text-center font-semibold">Edit Record</h2>
+
+            <input
+              type="time"
+              value={editStart}
+              onChange={(e) => setEditStart(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2"
+            />
+
+            <input
+              type="time"
+              value={editEnd}
+              onChange={(e) => setEditEnd(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2"
+            />
+
+            <input
+              type="number"
+              value={editAmount}
+              onChange={(e) => setEditAmount(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2"
+            />
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setEditing(null)}
+                className="flex-1 border rounded-xl py-2"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={saveEdit}
+                className="flex-1 bg-blue-600 text-white rounded-xl py-2"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete modal */}
       {confirmId && (
