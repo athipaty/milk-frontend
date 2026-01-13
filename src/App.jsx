@@ -40,11 +40,19 @@ function App() {
     }
   };
 
+  const toSGDateString = (date) => {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Singapore",
+    }).format(new Date(date));
+  };
+
   const addMilk = async () => {
     if (!amount || amount <= 0) return alert("Invalid amount");
     if (!startTime || !endTime) return alert("Please select time");
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Singapore",
+    }).format(new Date());
 
     const start = new Date(`${today}T${startTime}`);
     const end = new Date(`${today}T${endTime}`);
@@ -94,30 +102,6 @@ function App() {
     init();
   }, []);
 
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    const today = new Date();
-
-    if (date.toDateString() === today.toDateString()) {
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }
-
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-
-    if (date.toDateString() === yesterday.toDateString()) {
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }
-
-    return date.toLocaleDateString();
-  };
-
   const openEdit = (record) => {
     setEditing(record);
 
@@ -140,10 +124,12 @@ function App() {
     if (!editAmount || editAmount <= 0) return alert("Invalid amount");
     if (!editStart || !editEnd) return alert("Select time");
 
-    const today = new Date().toISOString().split("T")[0];
+    const originalDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Singapore",
+    }).format(new Date(editing.startTime));
 
-    const start = new Date(`${today}T${editStart}`);
-    const end = new Date(`${today}T${editEnd}`);
+    const start = new Date(`${originalDate}T${editStart}`);
+    const end = new Date(`${originalDate}T${editEnd}`);
 
     if (end <= start) return alert("End time must be after start time");
 
@@ -167,8 +153,8 @@ function App() {
   // 📅 GROUP BY DATE LOGIC
   // =========================
   const groupRecords = () => {
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    const today = toSGDateString(new Date());
+    const yesterday = toSGDateString(new Date(Date.now() - 86400000));
 
     const groups = {
       Today: [],
@@ -177,7 +163,8 @@ function App() {
     };
 
     records.forEach((r) => {
-      const d = new Date(r.time).toDateString();
+      const d = toSGDateString(r.time);
+
       if (d === today) groups.Today.push(r);
       else if (d === yesterday) groups.Yesterday.push(r);
       else groups.Older.push(r);
@@ -188,26 +175,59 @@ function App() {
 
   const grouped = groupRecords();
 
-  // =====================
-  // 📊 CHART LOGIC (unchanged)
-  // =====================
-  const getChartData = () => {
-    const days = [...Array(7)]
-      .map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        return d.toDateString();
-      })
-      .reverse();
+  // ====== NEW SIMPLE CHART (SG SAFE) ======
+  const buildChart = () => {
+    const todaySG = new Date(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Singapore",
+        dateStyle: "short",
+      }).format(new Date())
+    );
 
-    const totals = days.map((day) => {
-      return records
-        .filter((r) => new Date(r.time).toDateString() === day)
-        .reduce((sum, r) => sum + Number(r.amount), 0);
+    const days = [...Array(7)].map((_, i) => {
+      const d = new Date(todaySG);
+      d.setDate(d.getDate() - (6 - i));
+      return d;
     });
 
-    return { days, totals };
+    const data = days.map((day) => {
+      const key = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Singapore",
+      }).format(day);
+
+      const total = records
+        .filter(
+          (r) =>
+            new Intl.DateTimeFormat("en-CA", {
+              timeZone: "Asia/Singapore",
+            }).format(new Date(r.time)) === key
+        )
+        .reduce((sum, r) => sum + Number(r.amount), 0);
+
+      return {
+        date: day,
+        total,
+        label: day.toLocaleDateString("en-SG", { weekday: "short" }),
+      };
+    });
+
+    return data;
   };
+
+  const chartData = buildChart();
+  const rawMax = Math.max(...chartData.map((d) => d.total), 0);
+
+  // scale nicely to nearest 50 or 100
+  const roundedMax =
+    rawMax <= 100
+      ? 100
+      : rawMax <= 200
+      ? 200
+      : rawMax <= 500
+      ? 500
+      : Math.ceil(rawMax / 500) * 500;
+
+  const maxValue = roundedMax;
 
   const getDurationMinutes = (start, end) => {
     const startTime = new Date(start);
@@ -219,77 +239,91 @@ function App() {
     return diffMinutes;
   };
 
-  const { days, totals } = getChartData();
-  const max = Math.max(...totals, 1);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="max-w-md mx-auto space-y-5">
+      <div className="max-w-md mx-auto space-y-5 pb-56">
         {/* Total */}
         <div className="bg-white rounded-2xl shadow p-5 text-center">
           <p className="text-gray-400 text-sm">Today's Total</p>
           <p className="text-4xl font-bold text-blue-600">{total} ml</p>
         </div>
 
-        {/* Chart */}
+        {/* New Chart */}
         <div className="bg-white rounded-2xl shadow p-5">
           <h2 className="font-semibold text-gray-700 mb-3">Last 7 Days</h2>
 
-          <div className="flex items-end gap-2 h-32">
-            {totals.map((value, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center">
+          <div className="flex items-end gap-3 h-36">
+            {chartData.map((d, i) => {
+              const ratio = d.total / maxValue;
+              const visual = Math.pow(ratio, 0.6);
+
+              return (
                 <div
-                  className="w-full bg-blue-500 rounded-t-md"
-                  style={{
-                    height: `${(value / max) * 100}%`,
-                    minHeight: value > 0 ? "6px" : "0px",
-                  }}
-                />
-                <span className="text-[10px] text-gray-400 mt-1">
-                  {new Date(days[i]).toLocaleDateString(undefined, {
-                    weekday: "short",
-                  })}
-                </span>
-              </div>
-            ))}
+                  key={i}
+                  className="flex-1 flex flex-col items-center justify-end relative"
+                >
+                  <div
+                    className="w-full bg-blue-500 rounded-t-lg transition-all duration-500 relative"
+                    style={{
+                      height: `${visual * 100}%`,
+                      minHeight: d.total > 0 ? "14px" : "4px",
+                    }}
+                  >
+                    {d.total > 0 && (
+                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-gray-600 font-medium">
+                        {d.total}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-gray-400 mt-1">
+                    {d.label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Add record */}
-        <div className="bg-white rounded-2xl shadow p-5 space-y-4">
-          <input
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="text-center w-full border rounded-xl px-4 py-2"
-          />
+        {/* Spacer so content doesn't hide behind bottom bar */}
+        <div className="h-0" />
 
-          <input
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="text-center w-full border rounded-xl px-4 py-2"
-          />
+        {/* Sticky Add record bar */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
+          <div className="max-w-md mx-auto space-y-3">
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="text-center w-full border rounded-xl px-4 py-2"
+            />
 
-          <input
-            type="number"
-            placeholder="Amount (ml)"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="text-center w-full border rounded-xl px-4 py-2"
-          />
+            <input
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className="text-center w-full border rounded-xl px-4 py-2"
+            />
 
-          <button
-            onClick={addMilk}
-            disabled={saving}
-            className={`w-full py-2 rounded-xl font-medium transition ${
-              saving
-                ? "bg-gray-400 text-white cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
-            }`}
-          >
-            {saving ? "Saving..." : "Add Record"}
-          </button>
+            <input
+              type="number"
+              placeholder="Amount (ml)"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="text-center w-full border rounded-xl px-4 py-2"
+            />
+
+            <button
+              onClick={addMilk}
+              disabled={saving}
+              className={`w-full py-2 rounded-xl font-medium transition active:scale-95 ${
+                saving
+                  ? "bg-gray-400 text-white cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+            >
+              {saving ? "Saving..." : "Add Record"}
+            </button>
+          </div>
         </div>
 
         {/* History (GROUPED) */}
@@ -317,7 +351,7 @@ function App() {
                   {list.map((r) => (
                     <div
                       key={r._id}
-                      className="bg-white rounded-2xl shadow p-4 flex justify-between items-center"
+                      className="bg-white rounded-2xl shadow p-4 flex justify-between items-center transition-all duration-200 hover:scale-[1.01] hover:shadow-md"
                     >
                       <div className="flex gap-2 items-center">
                         <p className="font-bold text-xl text-blue-500">
@@ -362,8 +396,8 @@ function App() {
 
       {/* Edit modal */}
       {editing && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-2xl space-y-4 w-80">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center animate-fadeIn">
+          <div className="bg-white p-6 rounded-2xl space-y-4 w-80 animate-scaleIn">
             <h2 className="text-center font-semibold">Edit Record</h2>
 
             <input
