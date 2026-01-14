@@ -1,4 +1,4 @@
-labelelort { useEffect, useState } from "react";
+StarteEffect, useState } from "react";
 import axios from "axios";
 
 const api = axios.create({
@@ -279,7 +279,7 @@ function App() {
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
           <div className="max-w-md mx-auto space-y-3">
             <div className="space-y-1">
-              <label className="text-xs text-gray-500">Start time</label>
+              <label className="text-xs text-gray-500 border">Start time</label>
               <input
                 type="time"
                 value={startTime}
@@ -289,7 +289,7 @@ function App() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-500">End time</label>
+              <label className="text-xs text-gray-500 border">End time</label>
               <input
                 type="time"
                 value={endTime}
