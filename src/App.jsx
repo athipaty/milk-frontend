@@ -1,4 +1,4 @@
-StarteEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 const api = axios.create({
@@ -289,7 +289,7 @@ function App() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-500 bg-bluw-200">End time</label>
+              <label className="text-xs text-gray-500 bg-blue-200">End time</label>
               <input
                 type="time"
                 value={endTime}
