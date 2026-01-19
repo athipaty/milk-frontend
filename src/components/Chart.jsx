@@ -43,7 +43,7 @@ export default function Chart({ records }) {
     return (
       <div
         key={i}
-        className="flex-1 flex flex-col items-center justify-end"
+        className="flex-1 flex flex-col items-center justify-end h-full"
       >
         <div
           className="w-full bg-blue-500 rounded-t-lg transition-all duration-300"
