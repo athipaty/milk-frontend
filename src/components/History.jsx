@@ -18,7 +18,9 @@ export default function History({ records, onDelete, onEdit }) {
       {Object.entries(groups).map(([title, list]) =>
         list.length > 0 ? (
           <div key={title}>
-            <h3 className="text-sm font-semibold text-gray-500 space">{title}</h3>
+            <h3 className="text-sm font-semibold text-gray-500 space">
+              {title}
+            </h3>
 
             {list.map((r) => (
               <div
@@ -30,7 +32,8 @@ export default function History({ records, onDelete, onEdit }) {
 
                   <p className="text-xs text-gray-400">
                     {sgTime(r.startTime)} - {sgTime(r.endTime)} (
-                    {durationMinutes(r.startTime, r.endTime)} min)
+                    {durationMinutes(r.startTime, r.endTime)} min
+                    {title === "Older" && ` • ${sgDate(r.time)}`})
                   </p>
 
                   {title === "Older" && (
@@ -41,10 +44,7 @@ export default function History({ records, onDelete, onEdit }) {
                 </div>
 
                 <div className="flex gap-3 text-sm">
-                  <button
-                    onClick={() => onEdit(r)}
-                    className="text-blue-500"
-                  >
+                  <button onClick={() => onEdit(r)} className="text-blue-500">
                     Edit
                   </button>
 
@@ -58,7 +58,7 @@ export default function History({ records, onDelete, onEdit }) {
               </div>
             ))}
           </div>
-        ) : null
+        ) : null,
       )}
     </div>
   );
