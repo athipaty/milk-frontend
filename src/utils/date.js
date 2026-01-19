@@ -1,7 +1,13 @@
-export const buildTodayDateTime = (time) => {
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Singapore",
-  }).format(new Date());
+const TZ = "Asia/Singapore";
 
-  return new Date(`${today}T${time}`);
-};
+export const sgDate = (date) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date(date));
+
+export const sgTime = (date) =>
+  new Date(date).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+export const durationMinutes = (start, end) =>
+  Math.round((new Date(end) - new Date(start)) / 60000);
