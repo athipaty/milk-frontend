@@ -41,19 +41,30 @@ export default function Chart({ records }) {
         : `${Math.max(percent, 10)}%`;
 
     return (
-      <div
-        key={i}
-        className="flex-1 flex flex-col items-center justify-end h-full"
-      >
-        <div
-          className="w-full bg-blue-500 rounded-t-lg transition-all duration-300"
-          style={{ height }}
-        />
-        <span className="text-[11px] text-gray-400 mt-1">
-          {d.label}
-        </span>
-      </div>
-    );
+  <div
+    key={i}
+    className="flex-1 flex flex-col items-center justify-end h-full relative"
+  >
+    {/* Value on top */}
+    {safeTotal > 0 && (
+      <span className="text-[10px] text-gray-600 mb-1">
+        {safeTotal}
+      </span>
+    )}
+
+    {/* Bar */}
+    <div
+      className="w-full bg-blue-500 rounded-t-lg transition-all duration-300"
+      style={{ height }}
+    />
+
+    {/* Day label */}
+    <span className="text-[11px] text-gray-400 mt-1">
+      {d.label}
+    </span>
+  </div>
+);
+
   })}
 </div>
 
