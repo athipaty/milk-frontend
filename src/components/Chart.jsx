@@ -22,52 +22,45 @@ export default function Chart({ records }) {
     };
   });
 
-  const max = Math.max(...data.map((d) => d.total), 1);
+  const _max = Math.max(...data.map((d) => d.total), 1);
 
   return (
     <div className="bg-white rounded-2xl shadow p-5">
       <h2 className="font-semibold text-gray-700 mb-3">Last 7 Days</h2>
 
       <div className="flex items-end gap-3 h-36">
-  {data.map((d, i) => {
-    const safeTotal = Number(d.total) || 0;
-    const safeMax = Math.max(...data.map(x => Number(x.total) || 0), 1);
+        {data.map((d, i) => {
+          const safeTotal = Number(d.total) || 0;
+          const safeMax = Math.max(...data.map((x) => Number(x.total) || 0), 1);
 
-    const percent = (safeTotal / safeMax) * 100;
+          const percent = (safeTotal / safeMax) * 100;
+          const barHeight =
+            safeTotal === 0 ? "4px" : `${Math.max(percent, 3)}%`;
 
-    const height =
-      safeTotal === 0
-        ? "6px"
-        : `${Math.max(percent, 10)}%`;
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center">
+              {/* Chart area (bars scale only inside this box) */}
+              <div className="relative w-full h-28 flex items-end justify-center">
+                
+                {/* Bar */}
+                <div
+                  className="w-full bg-blue-500 rounded-t-xl transition-all duration-300 relative"
+                  style={{ height: barHeight }}
+                >
+                  {safeTotal > 0 && (
+                    <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[11px] text-gray-600 font-medium">
+                      {safeTotal}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-    return (
-  <div
-    key={i}
-    className="flex-1 flex flex-col items-center justify-end h-full relative"
-  >
-    {/* Value on top */}
-    {safeTotal > 0 && (
-      <span className="text-[10px] text-gray-600 mb-1">
-        {safeTotal}
-      </span>
-    )}
-
-    {/* Bar */}
-    <div
-      className="w-full bg-blue-500 rounded-t-lg transition-all duration-300"
-      style={{ height }}
-    />
-
-    {/* Day label */}
-    <span className="text-[11px] text-gray-400 mt-1">
-      {d.label}
-    </span>
-  </div>
-);
-
-  })}
-</div>
-
+              {/* Bottom day label */}
+              <span className="text-[11px] text-gray-400 mt-2">{d.label}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

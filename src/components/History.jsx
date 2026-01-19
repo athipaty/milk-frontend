@@ -1,6 +1,6 @@
 import { sgDate, sgTime, durationMinutes } from "../utils/date";
 
-export default function History({ records, onDelete }) {
+export default function History({ records, onDelete, onEdit }) {
   const today = sgDate(new Date());
   const yesterday = sgDate(new Date(Date.now() - 86400000));
 
@@ -18,7 +18,7 @@ export default function History({ records, onDelete }) {
       {Object.entries(groups).map(([title, list]) =>
         list.length > 0 ? (
           <div key={title}>
-            <h3 className="text-sm font-semibold text-gray-500">{title}</h3>
+            <h3 className="text-sm font-semibold text-gray-500 space">{title}</h3>
 
             {list.map((r) => (
               <div
@@ -33,7 +33,6 @@ export default function History({ records, onDelete }) {
                     {durationMinutes(r.startTime, r.endTime)} min)
                   </p>
 
-                  {/* Date only shown for Older */}
                   {title === "Older" && (
                     <p className="text-[11px] text-gray-400 mt-1">
                       {sgDate(r.time)}
@@ -41,12 +40,21 @@ export default function History({ records, onDelete }) {
                   )}
                 </div>
 
-                <button
-                  onClick={() => onDelete(r._id)}
-                  className="text-red-500 text-sm"
-                >
-                  Delete
-                </button>
+                <div className="flex gap-3 text-sm">
+                  <button
+                    onClick={() => onEdit(r)}
+                    className="text-blue-500"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => onDelete(r._id)}
+                    className="text-red-500"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -55,4 +63,3 @@ export default function History({ records, onDelete }) {
     </div>
   );
 }
-

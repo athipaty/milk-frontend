@@ -27,12 +27,32 @@ export default function AddBar({ onAdd }) {
   return (
     <div className="bg-white p-4 border-t fixed bottom-0 left-0 right-0">
       <div className="max-w-md mx-auto space-y-2">
-        <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="w-full border rounded p-2" />
-        <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="w-full border rounded p-2" />
-        <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full border rounded p-2" placeholder="Amount" />
-        <button onClick={submit} className="w-full bg-blue-600 text-white p-2 rounded">Add</button>
+        <input
+          type="time"
+          value={start}
+          onChange={(e) => setStart(e.target.value)}
+          className="w-full border rounded p-2"
+        />
+        <input
+          type="time"
+          value={end}
+          onChange={(e) => setEnd(e.target.value)}
+          className="w-full border rounded p-2"
+        />
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full border rounded p-2"
+          placeholder="Amount"
+        />
+        <button
+          onClick={submit}
+          className="w-full bg-blue-600 text-white p-2 rounded"
+        >
+          Add
+        </button>
       </div>
     </div>
   );
 }
-

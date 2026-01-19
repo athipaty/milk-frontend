@@ -4,6 +4,7 @@ import {
   fetchTodayTotal,
   createMilk,
   deleteMilk,
+  updateMilk,   // 👈 add this
 } from "../api/milkApi";
 
 export default function useMilk() {
@@ -18,8 +19,7 @@ export default function useMilk() {
         fetchMilk(),
         fetchTodayTotal(),
       ]);
-
-      setRecords(Array.isArray(r.data) ? r.data : []);
+      setRecords(r.data || []);
       setTotal(t.data?.total || 0);
     } finally {
       setLoading(false);
@@ -40,12 +40,17 @@ export default function useMilk() {
     reload();
   };
 
+  const editRecord = async (id, payload) => {
+    await updateMilk(id, payload);
+    reload();
+  };
+
   return {
     records,
     total,
     loading,
     addRecord,
     removeRecord,
+    editRecord,
   };
 }
-
