@@ -2,7 +2,10 @@ import { sgDate, sgTime, durationMinutes } from "../utils/date";
 
 export default function History({ records, onDelete, onEdit }) {
   const today = sgDate(new Date());
-  const yesterday = sgDate(new Date(Date.now() - 86400000));
+
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = sgDate(yesterdayDate);
 
   const groups = { Today: [], Yesterday: [], Older: [] };
 
@@ -25,22 +28,16 @@ export default function History({ records, onDelete, onEdit }) {
             {list.map((r) => (
               <div
                 key={r._id}
-                className="bg-white p-4 rounded-xl shadow flex justify-between"
+                className="bg-white px-4 py-2 rounded-xl shadow flex justify-between border my-1"
               >
                 <div>
                   <p className="font-bold text-blue-600">{r.amount} ml</p>
 
                   <p className="text-xs text-gray-400">
                     {sgTime(r.startTime)} - {sgTime(r.endTime)} (
-                    {durationMinutes(r.startTime, r.endTime)} min
-                    {title === "Older" && ` • ${sgDate(r.time)}`})
+                    {durationMinutes(r.startTime, r.endTime)} min) - {title === 'Older' && sgDate(r.time)}
+                     
                   </p>
-
-                  {title === "Older" && (
-                    <p className="text-[11px] text-gray-400 mt-1">
-                      {sgDate(r.time)}
-                    </p>
-                  )}
                 </div>
 
                 <div className="flex gap-3 text-sm">
