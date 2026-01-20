@@ -35,7 +35,7 @@ export default function History({ records, onDelete, onEdit }) {
 
                   <p className="text-xs text-gray-400">
                     {sgTime(r.startTime)} - {sgTime(r.endTime)} (
-                    {durationMinutes(r.startTime, r.endTime)} min) - {title === 'Older' && sgDate(r.time)}
+                    {durationMinutes(r.startTime, r.endTime)} min) {title === 'Older' && `${sgDate(r.time)}` }
                      
                   </p>
                 </div>
