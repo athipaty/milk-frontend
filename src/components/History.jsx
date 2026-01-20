@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { sgDate, sgTime, durationMinutes } from "../utils/date";
 
 export default function History({ records, onDelete, onEdit }) {
@@ -16,18 +17,49 @@ export default function History({ records, onDelete, onEdit }) {
     else groups.Older.push(r);
   });
 
+  // ================= SWIPE LOGIC =================
+  const [startX, setStartX] = useState(null);
+  const SWIPE_THRESHOLD = 80;
+
+  const handleTouchStart = (e) => {
+    setStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e, record) => {
+    if (startX === null) return;
+
+    const endX = e.changedTouches[0].clientX;
+    const diff = endX - startX;
+
+    // Swipe right → Edit
+    if (diff > SWIPE_THRESHOLD) {
+      onEdit(record);
+    }
+
+    // Swipe left → Delete (with confirm)
+    if (diff < -SWIPE_THRESHOLD) {
+      const ok = window.confirm("Delete this record?");
+      if (ok) onDelete(record._id);
+    }
+
+    setStartX(null);
+  };
+
+  // ================= UI =================
   return (
     <div className="space-y-4">
       {Object.entries(groups).map(([title, list]) =>
         list.length > 0 ? (
           <div key={title}>
-            <h3 className="text-sm font-semibold text-gray-500 space">
+            <h3 className="text-sm font-semibold text-gray-500">
               {title}
             </h3>
 
             {list.map((r) => (
               <div
                 key={r._id}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={(e) => handleTouchEnd(e, r)}
                 className="bg-white px-4 py-2 rounded-xl shadow flex justify-between border my-1"
               >
                 <div>
@@ -35,13 +67,16 @@ export default function History({ records, onDelete, onEdit }) {
 
                   <p className="text-xs text-gray-400">
                     {sgTime(r.startTime)} - {sgTime(r.endTime)} (
-                    {durationMinutes(r.startTime, r.endTime)} min) {title === 'Older' && `${sgDate(r.time)}` }
-                     
+                    {durationMinutes(r.startTime, r.endTime)} min)
+                    {title === "Older" && ` • ${sgDate(r.time)}`}
                   </p>
                 </div>
 
                 <div className="flex gap-3 text-sm">
-                  <button onClick={() => onEdit(r)} className="text-blue-500">
+                  <button
+                    onClick={() => onEdit(r)}
+                    className="text-blue-500"
+                  >
                     Edit
                   </button>
 
