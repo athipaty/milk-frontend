@@ -38,8 +38,7 @@ export default function History({ records, onDelete, onEdit }) {
 
     // Swipe left → Delete (with confirm)
     if (diff < -SWIPE_THRESHOLD) {
-      const ok = window.confirm("Delete this record?");
-      if (ok) onDelete(record._id);
+      onDelete(record._id);
     }
 
     setStartX(null);
