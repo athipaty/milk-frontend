@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { sgDate, sgTime, durationMinutes } from "../utils/date";
 
+const SWIPE_THRESHOLD = 120;
+const MAX_SWIPE = 150;
+
 export default function History({ records, onDelete, onEdit }) {
   const today = sgDate(new Date());
 
@@ -17,35 +20,48 @@ export default function History({ records, onDelete, onEdit }) {
     else groups.Older.push(r);
   });
 
-  // ================= SWIPE LOGIC =================
-  const [startX, setStartX] = useState(null);
-  const SWIPE_THRESHOLD = 80;
+  // ===== Swipe State per item =====
+  const [touchStart, setTouchStart] = useState(null);
+  const [swipeX, setSwipeX] = useState(0);
+  const [activeId, setActiveId] = useState(null);
 
-  const handleTouchStart = (e) => {
-    setStartX(e.touches[0].clientX);
+  const handleTouchStart = (e, id) => {
+    setTouchStart(e.touches[0].clientX);
+    setActiveId(id);
   };
 
-  const handleTouchEnd = (e, record) => {
-    if (startX === null) return;
+  const handleTouchMove = (e) => {
+    if (!touchStart) return;
 
-    const endX = e.changedTouches[0].clientX;
-    const diff = endX - startX;
+    const currentX = e.touches[0].clientX;
+    let diff = currentX - touchStart;
 
-    // Swipe right → Edit
-    if (diff > SWIPE_THRESHOLD) {
+    // limit movement
+    if (diff > MAX_SWIPE) diff = MAX_SWIPE;
+    if (diff < -MAX_SWIPE) diff = -MAX_SWIPE;
+
+    setSwipeX(diff);
+  };
+
+  const handleTouchEnd = (record) => {
+    if (!touchStart) return;
+
+    if (swipeX > SWIPE_THRESHOLD) {
       onEdit(record);
     }
 
-    // Swipe left → Delete (with confirm)
-    if (diff < -SWIPE_THRESHOLD) {
-      const ok = window.confirm("Delete this record?");
-      if (ok) onDelete(record._id);
+    if (swipeX < -SWIPE_THRESHOLD) {
+      if (window.confirm("Delete this record?")) {
+        onDelete(record._id);
+      }
     }
 
-    setStartX(null);
+    // snap back
+    setSwipeX(0);
+    setTouchStart(null);
+    setActiveId(null);
   };
 
-  // ================= UI =================
   return (
     <div className="space-y-4">
       {Object.entries(groups).map(([title, list]) =>
@@ -55,40 +71,59 @@ export default function History({ records, onDelete, onEdit }) {
               {title}
             </h3>
 
-            {list.map((r) => (
-              <div
-                key={r._id}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={(e) => handleTouchEnd(e, r)}
-                className="bg-white px-4 py-2 rounded-xl shadow flex justify-between border my-1"
-              >
-                <div>
-                  <p className="font-bold text-blue-600">{r.amount} ml</p>
+            {list.map((r) => {
+              const isActive = activeId === r._id;
 
-                  <p className="text-xs text-gray-400">
-                    {sgTime(r.startTime)} - {sgTime(r.endTime)} (
-                    {durationMinutes(r.startTime, r.endTime)} min)
-                    {title === "Older" && ` • ${sgDate(r.time)}`}
-                  </p>
-                </div>
+              return (
+                <div key={r._id} className="relative overflow-hidden my-1 rounded-xl">
+                  
+                  {/* Background layer */}
+                  <div className="absolute inset-0 flex justify-between items-center px-4 text-white text-sm">
+                    <div className="bg-blue-500 px-3 py-1 rounded-lg">
+                      Edit
+                    </div>
+                    <div className="bg-red-500 px-3 py-1 rounded-lg">
+                      Delete
+                    </div>
+                  </div>
 
-                <div className="flex gap-3 text-sm">
-                  <button
-                    onClick={() => onEdit(r)}
-                    className="text-blue-500"
+                  {/* Foreground swipe card */}
+                  <div
+                    onTouchStart={(e) => handleTouchStart(e, r._id)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={() => handleTouchEnd(r)}
+                    style={{
+                      transform: isActive ? `translateX(${swipeX}px)` : "translateX(0)",
+                      transition: touchStart ? "none" : "transform 0.25s ease",
+                    }}
+                    className="bg-white px-4 py-2 rounded-xl shadow border flex justify-between relative z-10"
                   >
-                    Edit
-                  </button>
+                    <div>
+                      <p className="font-bold text-blue-600">{r.amount} ml</p>
 
-                  <button
-                    onClick={() => onDelete(r._id)}
-                    className="text-red-500"
-                  >
-                    Delete
-                  </button>
+                      <p className="text-xs text-gray-400">
+                        {sgTime(r.startTime)} - {sgTime(r.endTime)} (
+                        {durationMinutes(r.startTime, r.endTime)} min)
+                        {title === "Older" && ` • ${sgDate(r.time)}`}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3 text-sm">
+                      <button onClick={() => onEdit(r)} className="text-blue-500">
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => onDelete(r._id)}
+                        className="text-red-500"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : null,
       )}
