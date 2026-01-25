@@ -118,8 +118,8 @@ function SwipeItem({ record, title, onDelete, onEdit }) {
 
             <p className="text-xs text-gray-400">
               {sgTime(record.startTime)} - {sgTime(record.endTime)} (
-              {durationMinutes(record.startTime, record.endTime)} min
-              {title === "Older" && ` • ${sgDate(record.time)}`})
+              {durationMinutes(record.startTime, record.endTime)} min )
+              {title === "Older" && ` • ${sgDate(record.time)}`}
             </p>
           </div>
 
