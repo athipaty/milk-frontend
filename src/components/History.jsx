@@ -113,7 +113,7 @@ function SwipeItem({ record, title, onDelete, onEdit }) {
         className="bg-white p-4 rounded-xl shadow transition-transform duration-200"
       >
         <div className="flex justify-between">
-          <div className="flex gap-2 justify-start">
+          <div className="flex gap-2 justify-start items-center">
             <p className="font-bold text-blue-600">{record.amount} ml</p>
 
             <p className="text-xs text-gray-400">
