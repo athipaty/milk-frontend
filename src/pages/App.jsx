@@ -35,6 +35,7 @@ export default function App() {
           onEdit={(record) => setEditing(record)}
         />
       </div>
+      <div></div>
 
       <AddBar onAdd={addRecord} />
 

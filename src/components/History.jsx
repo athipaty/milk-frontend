@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { sgDate, sgTime, durationMinutes } from "../utils/date";
 
 export default function History({ records, onDelete, onEdit }) {
-  const today = sgDate(new Date());
-  const yesterday = sgDate(new Date(Date.now() - 86400000));
+  const { today, yesterday } = useMemo(() => {
+    const now = new Date();
+
+    const today = sgDate(now);
+
+    const y = new Date(now);
+    y.setDate(y.getDate() - 1);
+    const yesterday = sgDate(y);
+
+    return { today, yesterday };
+  }, []);
 
   const groups = { Today: [], Yesterday: [], Older: [] };
 
@@ -33,7 +42,7 @@ export default function History({ records, onDelete, onEdit }) {
               ))}
             </div>
           </div>
-        ) : null
+        ) : null,
       )}
     </div>
   );
@@ -124,10 +133,7 @@ function SwipeItem({ record, title, onDelete, onEdit }) {
           </div>
 
           {isOpen && (
-            <button
-              onClick={reset}
-              className="text-xs text-gray-400"
-            >
+            <button onClick={reset} className="text-xs text-gray-400">
               Close
             </button>
           )}

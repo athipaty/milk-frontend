@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://milk-backend-05vv.onrender.com/api/milk",
+  baseURL: "https://center-kitchen-backend.onrender.com/api/milk",
 });
 
 // GET all records
