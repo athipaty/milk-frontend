@@ -4,23 +4,24 @@ import {
   fetchTodayTotal,
   createMilk,
   deleteMilk,
-  updateMilk,   // 👈 add this
+  updateMilk,
 } from "../api/milkApi";
 
 export default function useMilk() {
   const [records, setRecords] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const reload = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const [r, t] = await Promise.all([
-        fetchMilk(),
-        fetchTodayTotal(),
-      ]);
+      const [r, t] = await Promise.all([fetchMilk(), fetchTodayTotal()]);
       setRecords(r.data || []);
       setTotal(t.data?.total || 0);
+    } catch (e) {
+      setError(e?.response?.data?.message || "Failed to load data");
     } finally {
       setLoading(false);
     }
@@ -49,6 +50,7 @@ export default function useMilk() {
     records,
     total,
     loading,
+    error,
     addRecord,
     removeRecord,
     editRecord,

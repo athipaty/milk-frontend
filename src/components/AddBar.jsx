@@ -4,24 +4,29 @@ export default function AddBar({ onAdd }) {
   const [amount, setAmount] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     if (!amount || !start || !end) return alert("Fill all fields");
 
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Singapore",
     }).format(new Date());
 
-    onAdd({
-      amount,
-      type: "breast",
-      startTime: new Date(`${today}T${start}`),
-      endTime: new Date(`${today}T${end}`),
-    });
-
-    setAmount("");
-    setStart("");
-    setEnd("");
+    setSubmitting(true);
+    try {
+      await onAdd({
+        amount,
+        type: "breast",
+        startTime: new Date(`${today}T${start}`),
+        endTime: new Date(`${today}T${end}`),
+      });
+      setAmount("");
+      setStart("");
+      setEnd("");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -39,25 +44,29 @@ export default function AddBar({ onAdd }) {
             value={start}
             onChange={(e) => setStart(e.target.value)}
             className="w-full border rounded p-2"
+            disabled={submitting}
           />
           <input
             type="time"
             value={end}
             onChange={(e) => setEnd(e.target.value)}
             className="w-full border rounded p-2"
+            disabled={submitting}
           />
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="w-full border rounded p-2"
-            placeholder="Amount"
+            placeholder="Amount (ml)"
+            disabled={submitting}
           />
           <button
             onClick={submit}
-            className="w-full bg-blue-600 text-white p-2 rounded"
+            disabled={submitting}
+            className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
           >
-            Add
+            {submitting ? "Saving..." : "Add"}
           </button>
         </div>
       </div>

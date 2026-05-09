@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { sgDate, sgTime, durationMinutes } from "../utils/date";
 import { timeAgo } from "../utils/timeAgo";
 
@@ -9,9 +9,10 @@ export default function SwipeItem({
   onDelete,
   onEdit,
 }) {
-  const [startX, setStartX] = useState(null);
   const [offsetX, setOffsetX] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const startXRef = useRef(null);
+  const isDraggingRef = useRef(false);
 
   const SWIPE_LIMIT = 80;
 
@@ -24,17 +25,19 @@ export default function SwipeItem({
         ? "bg-yellow-100 text-yellow-700"
         : "bg-blue-100 text-blue-700";
 
-  const handleStart = (e) => {
-    setStartX(e.touches[0].clientX);
+  const handleDragStart = (clientX) => {
+    startXRef.current = clientX;
+    isDraggingRef.current = false;
   };
 
-  const handleMove = (e) => {
-    if (startX === null) return;
-    const currentX = e.touches[0].clientX;
-    setOffsetX(currentX - startX);
+  const handleDragMove = (clientX) => {
+    if (startXRef.current === null) return;
+    const delta = clientX - startXRef.current;
+    if (Math.abs(delta) > 5) isDraggingRef.current = true;
+    setOffsetX(delta);
   };
 
-  const handleEnd = () => {
+  const handleDragEnd = () => {
     if (offsetX > SWIPE_LIMIT) {
       setOffsetX(100);
       setIsOpen("right");
@@ -45,7 +48,7 @@ export default function SwipeItem({
       setOffsetX(0);
       setIsOpen(false);
     }
-    setStartX(null);
+    startXRef.current = null;
   };
 
   const reset = () => {
@@ -58,21 +61,14 @@ export default function SwipeItem({
       {/* Background actions */}
       <div className="absolute inset-0 flex justify-between items-center px-4 text-white text-sm">
         <div
-          onClick={() => {
-            onEdit(record);
-            reset();
-          }}
-          className="bg-blue-500 px-3 py-2 rounded-lg"
+          onClick={() => { onEdit(record); reset(); }}
+          className="bg-blue-500 px-3 py-2 rounded-lg cursor-pointer"
         >
           Edit
         </div>
-
         <div
-          onClick={() => {
-            onDelete(record._id);
-            reset();
-          }}
-          className="bg-red-500 px-3 py-2 rounded-lg"
+          onClick={() => { onDelete(record._id); reset(); }}
+          className="bg-red-500 px-3 py-2 rounded-lg cursor-pointer"
         >
           Delete
         </div>
@@ -80,11 +76,15 @@ export default function SwipeItem({
 
       {/* Foreground card */}
       <div
-        onTouchStart={handleStart}
-        onTouchMove={handleMove}
-        onTouchEnd={handleEnd}
+        onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
+        onTouchMove={(e) => handleDragMove(e.touches[0].clientX)}
+        onTouchEnd={handleDragEnd}
+        onMouseDown={(e) => handleDragStart(e.clientX)}
+        onMouseMove={(e) => { if (startXRef.current !== null) handleDragMove(e.clientX); }}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
         style={{ transform: `translateX(${offsetX}px)` }}
-        className="bg-white p-4 rounded-xl shadow transition-transform duration-200"
+        className="bg-white p-4 rounded-xl shadow transition-transform duration-200 select-none cursor-grab active:cursor-grabbing"
       >
         <div className="flex justify-between">
           <div className="flex gap-2 items-center">

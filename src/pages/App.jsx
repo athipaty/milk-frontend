@@ -13,6 +13,7 @@ export default function App() {
     records,
     total,
     loading,
+    error,
     addRecord,
     removeRecord,
     editRecord,
@@ -28,6 +29,12 @@ export default function App() {
         <Chart records={records} />
 
         {loading && <p className="text-center text-gray-400">Loading...</p>}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-3 text-sm text-center">
+            {error}
+          </div>
+        )}
 
         <History
           records={records}

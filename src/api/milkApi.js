@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://center-kitchen-backend.onrender.com/api/milk",
+  baseURL: import.meta.env.VITE_API_BASE,
 });
 
 // GET all records

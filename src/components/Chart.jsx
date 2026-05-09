@@ -11,18 +11,16 @@ export default function Chart({ records }) {
 
   const data = days.map((day) => {
     const key = sgDate(day);
-
     const total = records
       .filter((r) => sgDate(r.time) === key)
       .reduce((sum, r) => sum + Number(r.amount), 0);
-
     return {
       label: day.toLocaleDateString("en-SG", { weekday: "short" }),
       total,
     };
   });
 
-  const _max = Math.max(...data.map((d) => d.total), 1);
+  const max = Math.max(...data.map((d) => Number(d.total) || 0), 1);
 
   return (
     <div className="bg-white rounded-2xl shadow p-5">
@@ -31,18 +29,12 @@ export default function Chart({ records }) {
       <div className="flex items-end gap-3 h-36">
         {data.map((d, i) => {
           const safeTotal = Number(d.total) || 0;
-          const safeMax = Math.max(...data.map((x) => Number(x.total) || 0), 1);
-
-          const percent = (safeTotal / safeMax) * 100;
-          const barHeight =
-            safeTotal === 0 ? "4px" : `${Math.max(percent, 3)}%`;
+          const percent = (safeTotal / max) * 100;
+          const barHeight = safeTotal === 0 ? "4px" : `${Math.max(percent, 3)}%`;
 
           return (
             <div key={i} className="flex-1 flex flex-col items-center">
-              {/* Chart area (bars scale only inside this box) */}
               <div className="relative w-full h-28 flex items-end justify-center">
-                
-                {/* Bar */}
                 <div
                   className="w-full bg-blue-500 rounded-t-xl transition-all duration-300 relative"
                   style={{ height: barHeight }}
@@ -54,8 +46,6 @@ export default function Chart({ records }) {
                   )}
                 </div>
               </div>
-
-              {/* Bottom day label */}
               <span className="text-[11px] text-gray-400 mt-2">{d.label}</span>
             </div>
           );
