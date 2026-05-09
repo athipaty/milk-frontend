@@ -20,7 +20,7 @@ export default function History({ records, onDelete, onEdit }) {
   const groups = { Today: [], Yesterday: [], Older: [] };
 
   records.forEach((r) => {
-    const d = sgDate(r.time);
+    const d = sgDate(r.startTime);
     if (d === today) groups.Today.push(r);
     else if (d === yesterday) groups.Yesterday.push(r);
     else groups.Older.push(r);

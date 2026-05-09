@@ -15,11 +15,15 @@ export default function AddBar({ onAdd }) {
 
     setSubmitting(true);
     try {
+      const startDate = new Date(`${today}T${start}`);
+      const endDate = new Date(`${today}T${end}`);
+      if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1);
+
       await onAdd({
         amount,
         type: "breast",
-        startTime: new Date(`${today}T${start}`),
-        endTime: new Date(`${today}T${end}`),
+        startTime: startDate,
+        endTime: endDate,
       });
       setAmount("");
       setStart("");

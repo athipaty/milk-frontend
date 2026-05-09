@@ -7,7 +7,7 @@ export default function StatsStrip({ records }) {
       timeZone: "Asia/Singapore",
     }).format(new Date());
 
-    const todayRecords = records.filter((r) => sgDate(r.time) === today);
+    const todayRecords = records.filter((r) => sgDate(r.startTime) === today);
     const count = todayRecords.length;
 
     if (count === 0) return { count: 0, avgAmount: 0, avgDuration: 0 };

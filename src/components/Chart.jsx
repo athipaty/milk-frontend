@@ -14,7 +14,7 @@ export default function Chart({ records }) {
   const data = useMemo(() =>
     days.map((day) => {
       const key = sgDate(day);
-      const dayRecords = records.filter((r) => sgDate(r.time) === key);
+      const dayRecords = records.filter((r) => sgDate(r.startTime) === key);
 
       const totalMl = dayRecords.reduce((s, r) => s + Number(r.amount), 0);
       const avgDuration =
