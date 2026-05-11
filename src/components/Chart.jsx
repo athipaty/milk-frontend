@@ -27,28 +27,40 @@ export default function Chart({ records }) {
               ) / dayRecords.length
             );
 
+      const isToday =
+        key ===
+        new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(
+          new Date()
+        );
+
       return {
         label: day.toLocaleDateString("en-SG", { weekday: "short" }),
         totalMl,
         avgDuration,
+        isToday,
       };
     }),
   [days, records]);
 
-  const maxMl = Math.max(...data.map((d) => d.totalMl), 1);
+  const maxMl  = Math.max(...data.map((d) => d.totalMl), 1);
   const maxDur = Math.max(...data.map((d) => d.avgDuration), 1);
 
-  const Bar = ({ value, max, color, label }) => {
-    const pct = (value / max) * 100;
-    const height = value === 0 ? "3px" : `${Math.max(pct, 4)}%`;
+  const Bar = ({ value, max, isToday, colorActive, colorToday, label }) => {
+    const pct    = (value / max) * 100;
+    const height = value === 0 ? "4px" : `${Math.max(pct, 6)}%`;
+    const bg     = value === 0 ? "#e2e8f0" : isToday ? colorToday : colorActive;
+
     return (
-      <div className="relative w-full flex items-end justify-center" style={{ height: "4rem" }}>
+      <div
+        className="relative w-full flex items-end justify-center"
+        style={{ height: "4.5rem" }}
+      >
         <div
-          className={`w-full rounded-t-lg transition-all duration-300 relative ${color}`}
-          style={{ height }}
+          className="w-full rounded-t-lg transition-all duration-500"
+          style={{ height, backgroundColor: bg }}
         >
           {value > 0 && (
-            <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] text-gray-500 font-medium whitespace-nowrap">
+            <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] text-slate-500 font-semibold whitespace-nowrap">
               {label}
             </span>
           )}
@@ -57,33 +69,56 @@ export default function Chart({ records }) {
     );
   };
 
-  return (
-    <div className="bg-white rounded-2xl shadow p-5 space-y-4">
-      {/* ml chart */}
-      <div>
-        <p className="text-xs text-gray-400 font-medium mb-1">Total ml</p>
-        <div className="flex items-end gap-2">
-          {data.map((d, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center">
-              <Bar value={d.totalMl} max={maxMl} color="bg-blue-500" label={`${d.totalMl}`} />
-              <span className="text-[10px] text-gray-400 mt-1">{d.label}</span>
-            </div>
-          ))}
-        </div>
+  const Section = ({ title, dataKey, colorActive, colorToday, suffix }) => (
+    <div>
+      <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mb-2">
+        {title}
+      </p>
+      <div className="flex items-end gap-1.5">
+        {data.map((d, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center">
+            <Bar
+              value={d[dataKey]}
+              max={dataKey === "totalMl" ? maxMl : maxDur}
+              isToday={d.isToday}
+              colorActive={colorActive}
+              colorToday={colorToday}
+              label={`${d[dataKey]}${suffix}`}
+            />
+            <span
+              className={`text-[10px] mt-1 font-medium ${
+                d.isToday ? "text-blue-600" : "text-slate-400"
+              }`}
+            >
+              {d.label}
+            </span>
+          </div>
+        ))}
       </div>
+    </div>
+  );
 
-      {/* duration chart */}
-      <div>
-        <p className="text-xs text-gray-400 font-medium mb-1">Avg duration (min)</p>
-        <div className="flex items-end gap-2">
-          {data.map((d, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center">
-              <Bar value={d.avgDuration} max={maxDur} color="bg-emerald-400" label={`${d.avgDuration}`} />
-              <span className="text-[10px] text-gray-400 mt-1">{d.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-5">
+      <h2 className="text-sm font-bold text-slate-700">📊 7-Day Overview</h2>
+
+      <Section
+        title="Total ml"
+        dataKey="totalMl"
+        colorActive="#93c5fd"
+        colorToday="#2563eb"
+        suffix=""
+      />
+
+      <div className="border-t border-slate-100" />
+
+      <Section
+        title="Avg duration (min)"
+        dataKey="avgDuration"
+        colorActive="#6ee7b7"
+        colorToday="#059669"
+        suffix=" min"
+      />
     </div>
   );
 }
