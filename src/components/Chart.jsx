@@ -71,7 +71,7 @@ export default function Chart({ records }) {
 
   const Section = ({ title, dataKey, colorActive, colorToday, suffix }) => (
     <div>
-      <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mb-2">
+      <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mb-5">
         {title}
       </p>
       <div className="flex items-end gap-1.5">
