@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
+import { sgDate } from "../utils/date";
 
 export default function EditModal({ record, onSave, onClose }) {
   const [amount, setAmount] = useState("");
+  const [date,   setDate]   = useState("");
   const [start,  setStart]  = useState("");
   const [end,    setEnd]    = useState("");
 
   useEffect(() => {
     if (!record) return;
     setAmount(record.amount);
+    setDate(sgDate(record.startTime));
     const format = (d) =>
       new Date(d).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
     setStart(format(record.startTime));
@@ -17,15 +20,16 @@ export default function EditModal({ record, onSave, onClose }) {
   if (!record) return null;
 
   const submit = () => {
-    if (!amount || !start || !end) return alert("Please fill all fields");
-    const day = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Singapore",
-    }).format(new Date(record.startTime));
+    if (!amount || !date || !start || !end) return alert("Please fill all fields");
+    const startDate = new Date(`${date}T${start}`);
+    const endDate = new Date(`${date}T${end}`);
+    if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1);
+
     onSave(record._id, {
       amount,
-      startTime: new Date(`${day}T${start}`),
-      endTime:   new Date(`${day}T${end}`),
-      time:      new Date(`${day}T${start}`),
+      startTime: startDate,
+      endTime:   endDate,
+      time:      startDate,
     });
   };
 
@@ -48,6 +52,19 @@ export default function EditModal({ record, onSave, onClose }) {
 
         {/* Fields */}
         <div className="space-y-3">
+          <div>
+            <label className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider block mb-1">
+              Date
+            </label>
+            <input
+              type="date"
+              value={date}
+              max={sgDate(new Date())}
+              onChange={(e) => setDate(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
           <div>
             <label className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider block mb-1">
               Start time
