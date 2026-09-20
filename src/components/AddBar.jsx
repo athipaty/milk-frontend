@@ -1,25 +1,20 @@
 import { useState } from "react";
+import { sgDate } from "../utils/date";
 
 export default function AddBar({ onAdd }) {
   const [amount,     setAmount]     = useState("");
+  const [date,       setDate]       = useState(() => sgDate(new Date()));
   const [start,      setStart]      = useState("");
   const [end,        setEnd]        = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
-    if (!amount || !start || !end) return alert("Please fill all fields");
-
-    const today = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Singapore",
-    }).format(new Date());
+    if (!amount || !date || !start || !end) return alert("Please fill all fields");
 
     setSubmitting(true);
     try {
-      const now = new Date();
-      const startDate = new Date(`${today}T${start}`);
-      if (startDate > now) startDate.setDate(startDate.getDate() - 1);
-
-      const endDate = new Date(`${today}T${end}`);
+      const startDate = new Date(`${date}T${start}`);
+      const endDate = new Date(`${date}T${end}`);
       if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1);
 
       await onAdd({ amount, type: "breast", startTime: startDate, endTime: endDate });
@@ -43,6 +38,19 @@ export default function AddBar({ onAdd }) {
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
             Log a session
           </p>
+
+          {/* Date row */}
+          <div>
+            <label className="text-[10px] text-slate-400 font-medium mb-0.5 block">Date</label>
+            <input
+              type="date"
+              value={date}
+              max={sgDate(new Date())}
+              onChange={(e) => setDate(e.target.value)}
+              className={inputClass}
+              disabled={submitting}
+            />
+          </div>
 
           {/* Time row */}
           <div className="flex gap-2">
